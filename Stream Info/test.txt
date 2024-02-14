@@ -14,3 +14,9 @@ try {
     # If an error occurs during the request, it's caught here, which likely means the file does not exist
     Write-Output "The file does not exist in the GitHub repository."
 }
+
+
+    if (-not (Test-Path -Path $ico)) {
+        $icoUrl = "https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/twitch.ico"
+        File-Download -url $icoUrl -filePath $ico
+    }  
