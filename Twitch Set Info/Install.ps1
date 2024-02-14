@@ -1,6 +1,6 @@
 $baseFolder = $PSScriptRoot
 $roamingPath = [Environment]::GetFolderPath('ApplicationData')
-$touchPortal = Join-Path -Path $roamingPath -ChildPath "TouchPortal"
+$touchPortal = Join-Path -Path $roamingPath -ChildPath "TouchPortal\misc"
 
 Write-Host $touchPortal
 
