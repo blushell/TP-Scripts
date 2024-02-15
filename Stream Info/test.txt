@@ -20,3 +20,77 @@ try {
         $icoUrl = "https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/twitch.ico"
         File-Download -url $icoUrl -filePath $ico
     }  
+
+
+
+$baseFolder = $PSScriptRoot
+$binFolder = Join-Path -Path $baseFolder -ChildPath "bin"
+
+$logFile = Join-Path -Path $baseFolder -ChildPath "log.txt"
+
+$configFile = Join-Path -Path $binFolder -ChildPath "config.json"
+
+$ico = Join-Path -Path $binFolder -ChildPath "twitch.ico"
+
+$catSource = 'https://raw.githubusercontent.com/blushell/TP-Scripts/main/Twitch%20Set%20Info/bin/categories.txt'
+
+$systemLocale = (Get-WinSystemLocale).Name
+#####################################################################################################
+function Log-Error {
+    param (
+        [string]$logMessage = "No error message provided", 
+        [string]$logType
+    )
+    $formattedError = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - [$logType] $logMessage"
+    $formattedError | Out-File -FilePath $logFile -Append
+    exit     
+}
+
+function File-Download {
+    param (
+        [string]$url, 
+        [string]$filePath
+    )
+    $webClient = New-Object System.Net.WebClient
+    $webClient.DownloadFile($url, $filePath)  
+}
+#####################################################################################################
+<# BIN CHECK #>
+try {
+    if (-not (Test-Path -Path $binFolder -PathType Container)) {
+
+
+        $iconsFolder = Join-Path -Path $binFolder -ChildPath "icons"
+        New-Item -Path $iconsFolder -ItemType Directory | Out-Null
+
+        $icons = @(
+            @{name="kick.ico"; url="https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/kick.ico"},
+            @{name="twitch.ico"; url="https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/twitch.ico"},
+            @{name="youtube.ico"; url="https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/youtube.ico"}
+        )
+        foreach ($icon in $icons) {
+            $iconFilePath = Join-Path -Path $iconsFolder -ChildPath $icon.name
+            if (-not (Test-Path -Path $iconFilePath)) {
+                File-Download -url $icon.url -filePath $iconFilePath
+            }
+        }
+
+        $configOptions = [ordered]@{
+            "version" = "1.0"
+            "language" = "$systemLocale"
+            "theme" = "twitch"
+        }
+        $configOptions | ConvertTo-Json | Out-File -FilePath $configFile -Force
+    } else {
+        Write-Host "Folder already exists."
+    }
+
+} catch {
+    $errorMessage = $_.Exception.Message
+    Log-Error -logMessage $errorMessage -logType "ERROR"    
+}
+
+
+Write-Host "Press any key to exit..."
+$key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+exit

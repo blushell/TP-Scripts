@@ -1,19 +1,7 @@
 $baseFolder = $PSScriptRoot
 $binFolder = Join-Path -Path $baseFolder -ChildPath "bin"
-
-$logFile = Join-Path -Path $baseFolder -ChildPath "log.txt"
-
 $configFile = Join-Path -Path $binFolder -ChildPath "config.json"
-
-$iconsBaseUrl = "https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/icons/"
-$iconsToDownload = @(
-    "twitch.ico",
-    "kick.ico",
-    "youtube.ico"
-)
-
-$catSource = 'https://raw.githubusercontent.com/blushell/TP-Scripts/main/Twitch%20Set%20Info/bin/categories.txt'
-
+$logFilePath = Join-Path -Path $baseFolder -ChildPath "log.txt"
 $systemLocale = (Get-WinSystemLocale).Name
 #####################################################################################################
 function Log-Error {
@@ -25,7 +13,6 @@ function Log-Error {
     $formattedError | Out-File -FilePath $logFile -Append
     exit     
 }
-
 function File-Download {
     param (
         [string]$url, 
@@ -39,23 +26,43 @@ function File-Download {
 try {
     if (-not (Test-Path -Path $binFolder -PathType Container)) {
         New-Item -Path $binFolder -ItemType Directory | Out-Null
-        foreach ($icon in $iconsToDownload) {
-            $iconUrl = $iconsBaseUrl + $icon
-            $iconFilePath = Join-Path -Path $binFolder -ChildPath $icon
-            File-Download -url $iconUrl -filePath $iconFilePath
-            Write-Host "Downloaded $icon"
+
+        $configOptions = [ordered]@{
+            "version" = "1.0"
+            "language" = "en-US"
+            "font" = "Segoe UI"
+            "theme" = "twitch"
         }
+        $configOptions | ConvertTo-Json | Out-File -FilePath $configFile -Force
+
+        $themeFolder = Join-Path -Path $binFolder -ChildPath "theme"
+        New-Item -Path $themeFolder -ItemType Directory | Out-Null
+
+        $themeUrl = "https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/theme/theme.json"
+        File-Download -url $themeUrl -filePath $themeFolder
+
+        $icons = @(
+            @{name="kick.ico"; url="https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/kick.ico"},
+            @{name="twitch.ico"; url="https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/twitch.ico"},
+            @{name="youtube.ico"; url="https://raw.githubusercontent.com/blushell/TP-Scripts/main/Stream%20Info/bin/youtube.ico"}
+        )
+        foreach ($icon in $icons) {
+            $iconFilePath = Join-Path -Path $themeFolder -ChildPath $icon.name
+            if (-not (Test-Path -Path $iconFilePath)) {
+                File-Download -url $icon.url -filePath $iconFilePath
+            }
+        }
+
     } else {
-        Write-Host "Bin folder exists"
+        Write-Host "Folder already exists."
     }
+
 } catch {
     $errorMessage = $_.Exception.Message
-    Log-Error -logMessage $errorMessage -logType "ERROR"        
+    Log-Error -logMessage $errorMessage -logType "ERROR"    
 }
 
-
-
-
+#####################################################################################################
 Write-Host "Press any key to exit..."
 $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 exit
